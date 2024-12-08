@@ -1,31 +1,65 @@
 package com.Menu;
 
+import java.util.List;
+import java.util.Scanner;
+
 /**
  * @author Chance Mo 1306153
  * @version 1.0
  */
+import java.util.List;
+import java.util.Scanner;
+
 public class RestaurantSystem {
     public static void main(String[] args) {
-        MenuService menuService = new MenuService();
-        menuService.addMenuItem(new MenuItem("Burger", 10.0, 50));
-        menuService.addMenuItem(new MenuItem("Pizza", 12.5, 30));
-        menuService.addMenuItem(new MenuItem("Pasta", 8.0, 20));
-//
-//        OrderService orderService = new OrderService();
-//
-//        // 创建订单
-//        Order order = orderService.createOrder(menuService);
-//        orderService.processPayment(order);
-//
-//        // 保存订单和菜单
-//        FileUtils.saveMenuToFile(new ArrayList<>(menuService.getMenuItems().values()));
-//        FileUtils.saveOrderToFile(order);
-//
-//        // 加载菜单和订单
-//        menuService.displayMenu();
-//        Order loadedOrder = FileUtils.loadOrderFromFile(order.hashCode());
-//        if (loadedOrder != null) {
-//            System.out.println("Loaded Order: " + loadedOrder);
-//        }
+        MenuService menuService = new MenuService(); // 初始化菜单服务
+        //OrderService orderService = new OrderService(); // 初始化订单服务
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("\n=== Welcome to the Restaurant System ===");
+            System.out.println("1. View Menu Sorted by Price");
+            System.out.println("2. View Menu Sorted by Name");
+            System.out.println("3. Place an Order");
+            System.out.println("4. Exit");
+            System.out.print("Choose an option: ");
+
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1: // 按价格排序
+                    List<MenuItem> sortedByPrice = menuService.sortMenuByPrice();
+                    System.out.println("\n=== Menu Sorted by Price ===");
+                    menuService.displayMenu(sortedByPrice);
+                    break;
+
+                case 2: // 按名称排序
+                    List<MenuItem> sortedByName = menuService.sortMenuByName();
+                    System.out.println("\n=== Menu Sorted by Name ===");
+                    menuService.displayMenu(sortedByName);
+                    break;
+
+//                case 3: // 点单流程
+//                    System.out.println("\n=== Place Your Order ===");
+//                    Order order = orderService.createOrder(menuService);
+//                    if (order.getTotalPrice() > 0) {
+//                        System.out.println("\nYour Order:");
+//                        System.out.println(order);
+//                        orderService.processPayment(order);
+//                    } else {
+//                        System.out.println("No items were ordered.");
+//                    }
+//                    break;
+
+                case 4: // 退出程序
+                    System.out.println("Thank you for using the Restaurant System. Goodbye!");
+                    break;
+
+                default: // 非法输入
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+
     }
 }

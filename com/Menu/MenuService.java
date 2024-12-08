@@ -6,7 +6,9 @@ import java.util.*;
  * @author Chance Mo 1306153
  * @version 1.0
  */
-public class MenuService {
+import java.util.*;
+
+class MenuService {
     private Map<String, MenuItem> menuMap;
 
     public MenuService() {
@@ -52,27 +54,27 @@ public class MenuService {
         menuMap.put(item.getName(), item);
     }
 
-    // 显示菜单
-    public void displayMenu() {
-        System.out.println("=== Menu ===");
-        for (MenuItem item : menuMap.values()) {
-            System.out.println(item);
+    // 显示菜单（格式化输出）
+    public void displayMenu(List<MenuItem> menuList) {
+        System.out.println(String.format("%-20s %-10s %-10s", "Name", "Price", "Stock"));
+        System.out.println("------------------------------------------");
+        for (MenuItem item : menuList) {
+            System.out.println(String.format("%-20s $%-9.2f %-10d", item.getName(), item.getPrice(), item.getStock()));
         }
     }
 
-    // 按价格排序
-    public void sortMenuByPrice() {
+    // 按价格排序菜单
+    public List<MenuItem> sortMenuByPrice() {
         List<MenuItem> menuList = new ArrayList<>(menuMap.values());
         menuList.sort(Comparator.comparingDouble(MenuItem::getPrice));
-        System.out.println("=== Menu Sorted by Price ===");
-        menuList.forEach(System.out::println);
+        return menuList;
     }
 
-    // 按名称排序
-    public void sortMenuByName() {
+    // 按名称排序菜单
+    public List<MenuItem> sortMenuByName() {
         List<MenuItem> menuList = new ArrayList<>(menuMap.values());
         menuList.sort(Comparator.comparing(MenuItem::getName));
-        System.out.println("=== Menu Sorted by Name ===");
-        menuList.forEach(System.out::println);
+        return menuList;
     }
 }
+
