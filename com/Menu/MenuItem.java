@@ -7,7 +7,7 @@ import java.io.Serializable;
  * @version 1.0
  */
 // 父类 MenuItem
-class MenuItem implements MenuItemInterface, Serializable {
+public class MenuItem implements MenuItemInterface, Serializable {
     private String name;
     private double price;
     private int stock;
