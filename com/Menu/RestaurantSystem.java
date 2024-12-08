@@ -1,6 +1,7 @@
 package com.Menu;
 
 import com.Order.Order;
+import com.Order.OrderException;
 import com.Order.OrderService;
 
 import java.util.List;
@@ -14,9 +15,9 @@ import java.util.List;
 import java.util.Scanner;
 
 public class RestaurantSystem {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws OrderException {
         MenuService menuService = new MenuService(); // 初始化菜单服务
-        OrderService orderService = new OrderService(); // 初始化订单服务
+        OrderService orderService = new OrderService(menuService);// 初始化订单服务
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -45,11 +46,11 @@ public class RestaurantSystem {
 
                 case 3: // 点单流程
                     System.out.println("\n=== Place Your Order ===");
-                    Order order = orderService.createOrder(menuService);
+                    Order order = orderService.createOrder(scanner);;
                     if (order.getTotalPrice() > 0) {
                         System.out.println("\nYour Order:");
                         System.out.println(order);
-                        orderService.processPayment(order);
+                        orderService.processPayment(order, scanner);;
                     } else {
                         System.out.println("No items were ordered.");
                     }
