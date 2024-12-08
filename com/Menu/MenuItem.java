@@ -1,11 +1,13 @@
 package com.Menu;
 
+import java.io.Serializable;
+
 /**
  * @author Chance Mo 1306153
  * @version 1.0
  */
 // 父类 MenuItem
-public class MenuItem {
+class MenuItem implements MenuItemInterface, Serializable {
     private String name;
     private double price;
     private int stock;
@@ -16,34 +18,30 @@ public class MenuItem {
         this.stock = stock;
     }
 
-    // Getters and Setters
+    @Override
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
+    @Override
     public double getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
+    @Override
     public int getStock() {
         return stock;
     }
 
-    public void setStock(int stock) {
-        this.stock = stock;
+    @Override
+    public void updateStock(int quantity) {
+        this.stock -= quantity;
     }
 
     @Override
     public String toString() {
-        return "MenuItem{name='" + name + "', price=" + price + ", stock=" + stock + "}";
+        return name + " - $" + price + " - Stock: " + stock;
     }
 }
+
 
