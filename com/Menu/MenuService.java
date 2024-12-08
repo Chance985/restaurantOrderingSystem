@@ -8,13 +8,16 @@ import java.util.*;
  */
 import java.util.*;
 
-class MenuService {
+ public class MenuService {
     private Map<String, MenuItem> menuMap;
 
     public MenuService() {
         menuMap = new HashMap<>();
         initializeMenu(); // 初始化固定菜单
     }
+     public MenuItem getMenuItem(String name) {
+         return menuMap.get(name);
+     }
 
     // 初始化菜单
     private void initializeMenu() {
@@ -76,5 +79,8 @@ class MenuService {
         menuList.sort(Comparator.comparing(MenuItem::getName));
         return menuList;
     }
+
+
 }
+
 

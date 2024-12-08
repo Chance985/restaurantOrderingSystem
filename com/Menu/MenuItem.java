@@ -42,6 +42,18 @@ public class MenuItem implements MenuItemInterface, Serializable {
     public String toString() {
         return name + " - $" + price + " - Stock: " + stock;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
 }
 
 

@@ -1,5 +1,8 @@
 package com.Menu;
 
+import com.Order.Order;
+import com.Order.OrderService;
+
 import java.util.List;
 import java.util.Scanner;
 
@@ -13,7 +16,7 @@ import java.util.Scanner;
 public class RestaurantSystem {
     public static void main(String[] args) {
         MenuService menuService = new MenuService(); // 初始化菜单服务
-        //OrderService orderService = new OrderService(); // 初始化订单服务
+        OrderService orderService = new OrderService(); // 初始化订单服务
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -40,17 +43,17 @@ public class RestaurantSystem {
                     menuService.displayMenu(sortedByName);
                     break;
 
-//                case 3: // 点单流程
-//                    System.out.println("\n=== Place Your Order ===");
-//                    Order order = orderService.createOrder(menuService);
-//                    if (order.getTotalPrice() > 0) {
-//                        System.out.println("\nYour Order:");
-//                        System.out.println(order);
-//                        orderService.processPayment(order);
-//                    } else {
-//                        System.out.println("No items were ordered.");
-//                    }
-//                    break;
+                case 3: // 点单流程
+                    System.out.println("\n=== Place Your Order ===");
+                    Order order = orderService.createOrder(menuService);
+                    if (order.getTotalPrice() > 0) {
+                        System.out.println("\nYour Order:");
+                        System.out.println(order);
+                        orderService.processPayment(order);
+                    } else {
+                        System.out.println("No items were ordered.");
+                    }
+                    break;
 
                 case 4: // 退出程序
                     System.out.println("Thank you for using the Restaurant System. Goodbye!");

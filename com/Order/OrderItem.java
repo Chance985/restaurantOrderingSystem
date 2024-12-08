@@ -2,33 +2,27 @@ package com.Order;
 
 import com.Menu.MenuItem;
 
-/**
- * @author Alan 1306198
- * @version 1.0
- */
-public class OrderItem {
-    private MenuItem menuItem;  // Menu item
-    private int quantity;       // Quantity of the item
+import java.io.Serializable;
 
-    public OrderItem(MenuItem menuItem, int quantity) {
-        this.menuItem = menuItem;
+public class OrderItem implements Serializable {
+    private final MenuItem item;
+    private final int quantity;
+
+    public OrderItem(MenuItem item, int quantity) {
+        this.item = item;
         this.quantity = quantity;
     }
 
-    public MenuItem getMenuItem() {
-        return menuItem;
+    public MenuItem getItem() {
+        return item;
     }
 
     public int getQuantity() {
         return quantity;
     }
 
-    public double getTotalPrice() {
-        return menuItem.getPrice() * quantity;  // Total price for this item
-    }
-
     @Override
     public String toString() {
-        return menuItem.getName() + " x " + quantity + " = " + getTotalPrice() + " USD";
+        return String.format("%s x%d - $%.2f", item.getName(), quantity, item.getPrice() * quantity);
     }
 }
