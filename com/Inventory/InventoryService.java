@@ -2,28 +2,26 @@ package com.Inventory;
 
 import com.Menu.MenuItem;
 import com.Menu.MenuService;
+
 import java.io.*;
 import java.util.*;
 
-/**
- * @author Chance Mo 1306153
- * @version 1.0
- */
 public class InventoryService {
     private final MenuService menuService;
-    private static final int LOW_STOCK_THRESHOLD = 5;  // 库存警戒线阈值
-    private static final String INVENTORY_FILE = "inventory.dat";  // 库存数据文件路径
-    private Map<String, InventoryRecord> inventoryRecords;  // 库存记录映射
-    private static InventoryService instance;  // 单例模式实例
+    private static final int LOW_STOCK_THRESHOLD = 5;
+    private static final String INVENTORY_FILE = "inventory.dat";
+    private Map<String, InventoryRecord> inventoryRecords;
+    private static InventoryService instance;
+    private Timer inventoryCheckTimer;
+    private static final long INVENTORY_CHECK_INTERVAL = 3600000; // 1小时检查一次
 
-    // 私有构造函数，确保只能通过getInstance方法获取实例
     private InventoryService(MenuService menuService) {
         this.menuService = menuService;
         this.inventoryRecords = new HashMap<>();
         loadInventoryRecords();
+        initializeInventoryChecker();
     }
 
-    // 获取InventoryService实例
     public static synchronized InventoryService getInstance(MenuService menuService) {
         if (instance == null) {
             instance = new InventoryService(menuService);
@@ -31,12 +29,11 @@ public class InventoryService {
         return instance;
     }
 
-    // 内部类：库存记录
     private static class InventoryRecord implements Serializable {
-        private int currentStock;     // 当前库存
-        private int reorderPoint;     // 补货点
-        private int maxStock;         // 最大库存
-        private List<InventoryTransaction> transactions;  // 交易记录列表
+        private int currentStock;
+        private int reorderPoint;
+        private int maxStock;
+        private List<InventoryTransaction> transactions;
 
         public InventoryRecord(int currentStock) {
             this.currentStock = currentStock;
@@ -46,11 +43,10 @@ public class InventoryService {
         }
     }
 
-    // 内部类：库存交易记录
     private static class InventoryTransaction implements Serializable {
-        private final String type;      // 交易类型："SALE"销售, "RESTOCK"补货
-        private final int quantity;     // 交易数量
-        private final long timestamp;   // 交易时间戳
+        private final String type;
+        private final int quantity;
+        private final long timestamp;
 
         public InventoryTransaction(String type, int quantity) {
             this.type = type;
@@ -59,44 +55,64 @@ public class InventoryService {
         }
     }
 
-    // 检查并更新库存
-    public boolean updateStock(String itemName, int quantity, String operationType) throws InventoryException {
+    private void initializeInventoryChecker() {
+        inventoryCheckTimer = new Timer(true);
+        inventoryCheckTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                checkAllInventoryLevels();
+            }
+        }, INVENTORY_CHECK_INTERVAL, INVENTORY_CHECK_INTERVAL);
+    }
+
+    private void checkAllInventoryLevels() {
+        System.out.println("\n=== Scheduled Inventory Check ===");
+        for (Map.Entry<String, InventoryRecord> entry : inventoryRecords.entrySet()) {
+            String itemName = entry.getKey();
+            InventoryRecord record = entry.getValue();
+            checkLowStock(itemName, record);
+        }
+    }
+
+    public synchronized boolean updateStock(String itemName, int quantity, String operationType) throws InventoryException {
         MenuItem item = menuService.getMenuItem(itemName);
         if (item == null) {
             throw new InventoryException("Item not found: " + itemName);
         }
 
-        // 获取或创建库存记录
         InventoryRecord record = inventoryRecords.computeIfAbsent(
                 itemName,
                 k -> new InventoryRecord(item.getStock())
         );
 
-        // 根据操作类型更新库存
+        int newStock;
         if (operationType.equals("SALE")) {
             if (record.currentStock < quantity) {
                 throw new InventoryException("Insufficient stock for " + itemName);
             }
-            record.currentStock -= quantity;
+            newStock = record.currentStock - quantity;
         } else if (operationType.equals("RESTOCK")) {
-            record.currentStock += quantity;
+            newStock = record.currentStock + quantity;
+        } else {
+            throw new InventoryException("Invalid operation type: " + operationType);
         }
 
-        // 更新MenuItem中的库存显示
-        item.setStock(record.currentStock);
+        record.currentStock = newStock;
+        item.updateStock(newStock);
+        menuService.syncMenuStock(itemName, newStock);
 
-        // 记录交易
         record.transactions.add(new InventoryTransaction(operationType,
                 operationType.equals("SALE") ? -quantity : quantity));
 
-        // 检查库存警戒线
         checkLowStock(itemName, record);
         saveInventoryRecords();
+
+        System.out.println("Stock updated for " + itemName + ": " + newStock + " units remaining");
+
         return true;
     }
 
-    // 检查库存是否充足
-    public boolean checkStock(String itemName, int quantity) {
+    public synchronized boolean checkStock(String itemName, int quantity) {
         MenuItem item = menuService.getMenuItem(itemName);
         if (item == null) return false;
 
@@ -108,7 +124,11 @@ public class InventoryService {
         return record.currentStock >= quantity;
     }
 
-    // 检查低库存并发出警告
+    public synchronized int getCurrentStock(String itemName) {
+        InventoryRecord record = inventoryRecords.get(itemName);
+        return record != null ? record.currentStock : 0;
+    }
+
     private void checkLowStock(String itemName, InventoryRecord record) {
         if (record.currentStock <= record.reorderPoint) {
             System.out.println("\nWarning: Low stock alert for " + itemName + "!");
@@ -117,14 +137,12 @@ public class InventoryService {
         }
     }
 
-    // 补充库存
     public void restockItem(String itemName, int quantity) throws InventoryException {
         updateStock(itemName, quantity, "RESTOCK");
         InventoryRecord record = inventoryRecords.get(itemName);
         System.out.println("Successfully restocked " + itemName + ". New stock level: " + record.currentStock);
     }
 
-    // 生成库存报告
     public void generateInventoryReport() {
         System.out.println("\n=== Inventory Status Report ===");
         System.out.printf("%-20s %-12s %-12s %-12s%n",
@@ -143,7 +161,6 @@ public class InventoryService {
         }
     }
 
-    // 查看指定商品的库存历史
     public void viewItemHistory(String itemName) {
         InventoryRecord record = inventoryRecords.get(itemName);
         if (record == null) {
@@ -161,7 +178,6 @@ public class InventoryService {
         }
     }
 
-    // 设置库存警戒线
     public void setReorderPoint(String itemName, int reorderPoint) throws InventoryException {
         MenuItem item = menuService.getMenuItem(itemName);
         if (item == null) {
@@ -179,7 +195,6 @@ public class InventoryService {
         System.out.println("Successfully updated reorder point for " + itemName + " to " + reorderPoint);
     }
 
-    // 保存库存记录到文件
     private void saveInventoryRecords() {
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream(INVENTORY_FILE))) {
@@ -189,18 +204,32 @@ public class InventoryService {
         }
     }
 
-    // 从文件加载库存记录
     @SuppressWarnings("unchecked")
     private void loadInventoryRecords() {
         try (ObjectInputStream ois = new ObjectInputStream(
                 new FileInputStream(INVENTORY_FILE))) {
             inventoryRecords = (Map<String, InventoryRecord>) ois.readObject();
+
+            for (Map.Entry<String, InventoryRecord> entry : inventoryRecords.entrySet()) {
+                String itemName = entry.getKey();
+                int currentStock = entry.getValue().currentStock;
+                MenuItem item = menuService.getMenuItem(itemName);
+                if (item != null) {
+                    item.updateStock(currentStock);
+                }
+            }
         } catch (FileNotFoundException e) {
-            // 文件不存在时使用空的记录映射
             inventoryRecords = new HashMap<>();
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Error loading inventory records: " + e.getMessage());
             inventoryRecords = new HashMap<>();
         }
+    }
+
+    public void shutdown() {
+        if (inventoryCheckTimer != null) {
+            inventoryCheckTimer.cancel();
+        }
+        saveInventoryRecords();
     }
 }

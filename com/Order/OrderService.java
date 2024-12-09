@@ -10,8 +10,8 @@ import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class OrderService {
-    private final Stack<Order> recentOrders;  // 使用栈存储最近的订单
-    private final Queue<Order> orderQueue;    // 使用队列处理订单
+    private final Stack<Order> recentOrders;
+    private final Queue<Order> orderQueue;
     private final MenuService menuService;
     private static final String ORDER_FILE = "orders.dat";
 
@@ -22,7 +22,6 @@ public class OrderService {
         loadOrders();
     }
 
-    // 创建新订单
     public Order createOrder(Scanner scanner) throws OrderException {
         Order order = new Order();
         boolean ordering = true;
@@ -49,24 +48,25 @@ public class OrderService {
                         ordering = false;
                         break;
                     case 3:
+                        if (!order.getItems().isEmpty()) {
+                            restoreInventory(order);
+                        }
                         return null;
                     default:
                         System.out.println("Invalid choice. Please try again.");
                 }
             } catch (InputMismatchException e) {
-                scanner.nextLine(); // 清除无效输入
+                scanner.nextLine();
                 System.out.println("Invalid input. Please enter a number.");
             }
         }
 
-        // 将订单添加到最近订单栈和处理队列中
         recentOrders.push(order);
         orderQueue.offer(order);
         saveOrders();
         return order;
     }
 
-    // 向订单添加商品
     private void addItemToOrder(Order order, Scanner scanner) throws OrderException {
         menuService.displayMenu(menuService.sortMenuByName());
 
@@ -75,38 +75,62 @@ public class OrderService {
 
         System.out.print("Enter quantity: ");
         int quantity = scanner.nextInt();
-        scanner.nextLine(); // 消耗换行符
+        scanner.nextLine();
+
+        if (quantity <= 0) {
+            throw new OrderException("Quantity must be greater than 0");
+        }
 
         MenuItem item = menuService.getMenuItem(itemName);
         if (item == null) {
             throw new OrderException("Item not found: " + itemName);
         }
 
-        // 使用InventoryService检查和更新库存
         InventoryService inventoryService = InventoryService.getInstance(menuService);
         try {
             if (!inventoryService.checkStock(itemName, quantity)) {
+                System.out.println("Current available stock for " + itemName + ": "
+                        + inventoryService.getCurrentStock(itemName));
                 throw new OrderException("Insufficient stock for " + itemName);
             }
-            inventoryService.updateStock(itemName, quantity, "SALE");
-            order.addItem(item, quantity);
+
+            if (inventoryService.updateStock(itemName, quantity, "SALE")) {
+                order.addItem(item, quantity);
+                System.out.println("Added " + quantity + " " + itemName + "(s) to your order");
+                System.out.println("Remaining stock for " + itemName + ": "
+                        + inventoryService.getCurrentStock(itemName));
+            }
         } catch (InventoryException e) {
             throw new OrderException("Inventory error: " + e.getMessage());
         }
     }
 
-    // 处理订单支付
+    private void restoreInventory(Order order) {
+        InventoryService inventoryService = InventoryService.getInstance(menuService);
+        for (OrderItem orderItem : order.getItems()) {
+            try {
+                String itemName = orderItem.getItem().getName();
+                int quantity = orderItem.getQuantity();
+                inventoryService.updateStock(itemName, quantity, "RESTOCK");
+                System.out.println("Restored " + quantity + " " + itemName + "(s) to inventory");
+            } catch (InventoryException e) {
+                System.err.println("Error restoring inventory: " + e.getMessage());
+            }
+        }
+    }
+
     public void processPayment(Order order, Scanner scanner) {
         System.out.println("\nOrder Total: $" + String.format("%.2f", order.getTotalPrice()));
         System.out.print("Enter payment amount: $");
 
         try {
             double payment = scanner.nextDouble();
-            scanner.nextLine(); // 消耗换行符
+            scanner.nextLine();
 
             if (payment < order.getTotalPrice()) {
                 System.out.println("Insufficient payment. Order cancelled.");
                 order.setStatus(OrderStatus.CANCELLED);
+                restoreInventory(order);
             } else {
                 double change = payment - order.getTotalPrice();
                 System.out.printf("Change: $%.2f%n", change);
@@ -114,15 +138,15 @@ public class OrderService {
                 System.out.println("Payment processed successfully!");
             }
         } catch (InputMismatchException e) {
-            scanner.nextLine(); // 清除无效输入
+            scanner.nextLine();
             System.out.println("Invalid payment amount. Order cancelled.");
             order.setStatus(OrderStatus.CANCELLED);
+            restoreInventory(order);
         }
 
         saveOrders();
     }
 
-    // 将订单保存到文件
     private void saveOrders() {
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream(ORDER_FILE))) {
@@ -132,7 +156,6 @@ public class OrderService {
         }
     }
 
-    // 从文件加载订单
     @SuppressWarnings("unchecked")
     private void loadOrders() {
         try (ObjectInputStream ois = new ObjectInputStream(
@@ -151,7 +174,6 @@ public class OrderService {
         }
     }
 
-    // 查看最近的订单（使用栈）
     public void viewRecentOrders() {
         if (recentOrders.isEmpty()) {
             System.out.println("No recent orders.");
@@ -167,13 +189,11 @@ public class OrderService {
             tempStack.push(order);
         }
 
-        // 恢复原始栈
         while (!tempStack.isEmpty()) {
             recentOrders.push(tempStack.pop());
         }
     }
 
-    // 查看订单队列
     public void viewOrderQueue() {
         if (orderQueue.isEmpty()) {
             System.out.println("No orders in queue.");
@@ -187,7 +207,6 @@ public class OrderService {
         }
     }
 
-    // 处理队列中的下一个订单
     public void processNextOrder() {
         Order order = orderQueue.poll();
         if (order != null) {

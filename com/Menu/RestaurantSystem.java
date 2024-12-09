@@ -1,5 +1,6 @@
 package com.Menu;
 
+import com.Inventory.InventoryService;
 import com.Order.Order;
 import com.Order.OrderException;
 import com.Order.OrderService;
@@ -12,9 +13,23 @@ import java.util.InputMismatchException;
  * @version 1.0
  */
 public class RestaurantSystem {
+    private static MenuService menuService;
+    private static OrderService orderService;
+    private static InventoryService inventoryService;
     public static void main(String[] args) throws OrderException {
-        MenuService menuService = new MenuService(); // 初始化菜单服务
-        OrderService orderService = new OrderService(menuService); // 初始化订单服务
+        // 初始化服务
+        menuService = new MenuService();
+        inventoryService = InventoryService.getInstance(menuService);
+        // 设置 InventoryService 到 MenuService
+        menuService.setInventoryService(inventoryService);
+        orderService = new OrderService(menuService);
+
+        // 添加关闭钩子
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("\nShutting down system...");
+            inventoryService.shutdown();
+            System.out.println("System shutdown complete.");
+        }));
         Scanner scanner = new Scanner(System.in);
 
         while (true) {

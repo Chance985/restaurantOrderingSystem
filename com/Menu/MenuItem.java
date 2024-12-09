@@ -2,10 +2,12 @@ package com.Menu;
 
 import java.io.Serializable;
 
-public class MenuItem implements Serializable {
+public class MenuItem implements Serializable, MenuItemInterface {
+    private static final long serialVersionUID = -8820186751161460358L;  // 添加这一行
+
     private String name;
     private double price;
-    private int stock;  // 仅用于显示，不直接管理
+    private volatile int stock;
 
     public MenuItem(String name, double price, int stock) {
         this.name = name;
@@ -13,20 +15,27 @@ public class MenuItem implements Serializable {
         this.stock = stock;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public double getPrice() {
         return price;
     }
 
+    @Override
     public int getStock() {
         return stock;
     }
 
-    // 只在InventoryService中调用此方法
-    public void setStock(int stock) {
+    @Override
+    public synchronized void updateStock(int quantity) {
+        this.stock = quantity;
+    }
+
+    public synchronized void setStock(int stock) {
         this.stock = stock;
     }
 
