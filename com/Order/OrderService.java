@@ -1,6 +1,9 @@
 package com.Order;
+
 import com.Menu.MenuItem;
 import com.Menu.MenuService;
+import com.Inventory.InventoryService;
+import com.Inventory.InventoryException;
 
 import java.io.*;
 import java.util.*;
@@ -11,7 +14,6 @@ public class OrderService {
     private final Queue<Order> orderQueue;    // 使用队列处理订单
     private final MenuService menuService;
     private static final String ORDER_FILE = "orders.dat";
-    private static final int LOW_STOCK_THRESHOLD = 5;
 
     public OrderService(MenuService menuService) {
         this.menuService = menuService;
@@ -64,7 +66,7 @@ public class OrderService {
         return order;
     }
 
-    // 向订单添加商品并检查库存
+    // 向订单添加商品
     private void addItemToOrder(Order order, Scanner scanner) throws OrderException {
         menuService.displayMenu(menuService.sortMenuByName());
 
@@ -80,16 +82,17 @@ public class OrderService {
             throw new OrderException("Item not found: " + itemName);
         }
 
-        if (item.getStock() < quantity) {
-            throw new OrderException("Insufficient stock for " + itemName);
+        // 使用InventoryService检查和更新库存
+        InventoryService inventoryService = InventoryService.getInstance(menuService);
+        try {
+            if (!inventoryService.checkStock(itemName, quantity)) {
+                throw new OrderException("Insufficient stock for " + itemName);
+            }
+            inventoryService.updateStock(itemName, quantity, "SALE");
+            order.addItem(item, quantity);
+        } catch (InventoryException e) {
+            throw new OrderException("Inventory error: " + e.getMessage());
         }
-
-        if (item.getStock() - quantity <= LOW_STOCK_THRESHOLD) {
-            System.out.println("Warning: Low stock alert for " + itemName);
-        }
-
-        item.updateStock(quantity);
-        order.addItem(item, quantity);
     }
 
     // 处理订单支付
@@ -142,7 +145,7 @@ public class OrderService {
                 }
             }
         } catch (FileNotFoundException e) {
-            // 文件不存在，从空订单开始
+            // 文件不存在时从空订单开始
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Error loading orders: " + e.getMessage());
         }

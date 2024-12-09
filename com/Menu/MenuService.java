@@ -6,18 +6,17 @@ import java.util.*;
  * @author Chance Mo 1306153
  * @version 1.0
  */
-import java.util.*;
-
- public class MenuService {
+public class MenuService {
     private Map<String, MenuItem> menuMap;
 
     public MenuService() {
         menuMap = new HashMap<>();
         initializeMenu(); // 初始化固定菜单
     }
-     public MenuItem getMenuItem(String name) {
-         return menuMap.get(name);
-     }
+
+    public MenuItem getMenuItem(String name) {
+        return menuMap.get(name);
+    }
 
     // 初始化菜单
     private void initializeMenu() {
@@ -53,16 +52,16 @@ import java.util.*;
     }
 
     // 添加菜单项
-    public void addMenuItem(MenuItem item) {
+    private void addMenuItem(MenuItem item) {
         menuMap.put(item.getName(), item);
     }
 
     // 显示菜单（格式化输出）
     public void displayMenu(List<MenuItem> menuList) {
-        System.out.println(String.format("%-20s %-10s %-10s", "Name", "Price", "Stock"));
+        System.out.println(String.format("%-20s %-10s %-10s", "Name", "Price", "Available"));
         System.out.println("------------------------------------------");
         for (MenuItem item : menuList) {
-            System.out.println(String.format("%-20s $%-9.2f %-10d", item.getName(), item.getPrice(), item.getStock()));
+            System.out.println(item.toString());
         }
     }
 
@@ -79,8 +78,4 @@ import java.util.*;
         menuList.sort(Comparator.comparing(MenuItem::getName));
         return menuList;
     }
-
-
 }
-
-

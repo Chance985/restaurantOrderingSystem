@@ -1,7 +1,6 @@
 package com.Order;
 
 import com.Menu.MenuItem;
-
 import java.io.Serializable;
 
 public class OrderItem implements Serializable {
@@ -23,6 +22,9 @@ public class OrderItem implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("%s x%d - $%.2f", item.getName(), quantity, item.getPrice() * quantity);
+        return String.format("%s x%d - $%.2f",
+                item.getName(),
+                quantity,
+                item.getPrice() * quantity);
     }
 }

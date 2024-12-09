@@ -1,7 +1,6 @@
 package com.Order;
 
 import com.Menu.MenuItem;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,9 +56,12 @@ public class Order implements Serializable {
         sb.append("Order #").append(orderId).append("\n");
         sb.append("Items:\n");
         for (OrderItem item : items) {
-            sb.append("  ").append(item).append("\n");
+            sb.append(String.format("  %-20s x%-3d $%.2f\n",
+                    item.getItem().getName(),
+                    item.getQuantity(),
+                    item.getItem().getPrice() * item.getQuantity()));
         }
-        sb.append("Total Price: $").append(String.format("%.2f", totalPrice)).append("\n");
+        sb.append(String.format("Total Price: $%.2f\n", totalPrice));
         sb.append("Status: ").append(status);
         return sb.toString();
     }
